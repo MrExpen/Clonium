@@ -1,25 +1,20 @@
 ﻿using Bot;
 using GameLib;
+using GameLib.BitOperations;
 using GameLib.Exceptions;
 
-var game = new Board();
+var game = new Board8X8();
 
 int selectedX = 0, selectedY = 0;
 
-while (!game.Winner.HasValue)
+while (!game.Ours.IsEmpty && !game.Three.IsEmpty)
 {
-    if (game.PlayerTurn == 1)
-    {
-        game.MakeTurn(MinMax.GetBestMove(game, 4));
-    }
-    
-    
     Console.BackgroundColor = ConsoleColor.Black;
     Console.Clear();
 
-    for (int y = 0; y < game.LengthY; y++)
+    for (int y = 0; y < 8; y++)
     {
-        for (int x = 0; x < game.LengthX; x++)
+        for (int x = 0; x < 8; x++)
         {
             if (selectedX == x && selectedY == y)
             {
@@ -29,30 +24,29 @@ while (!game.Winner.HasValue)
             {
                 Console.ForegroundColor = ConsoleColor.Cyan;
             }
-            switch (game[x, y].State)
+
+            if ((game.Ours | game.Theirs)[x, y])
             {
-                case CellState.Wall:
-                    Console.BackgroundColor = ConsoleColor.Black;
-                    Console.Write('#');
-                    break;
-                case CellState.Zero:
-                    Console.BackgroundColor = ConsoleColor.Gray;
-                    Console.Write('.');
-                    break;
-                default:
-                    Console.BackgroundColor = game[x, y].Player switch
-                    {
-                        0 => ConsoleColor.Blue,
-                        1 => ConsoleColor.Red,
-                        2 => ConsoleColor.Green,
-                        3 => ConsoleColor.Yellow,
-                        _ => throw new Exception()
-                    };
-                    Console.Write((byte)game[x, y].State);
-                    break;
+                Console.BackgroundColor = game.Ours[x, y] ? ConsoleColor.Blue : ConsoleColor.Red;
+                if (game.One[x, y])
+                {
+                    Console.Write(1);
+                }
+                else if (game.Two[x, y])
+                {
+                    Console.Write(2);
+                }
+                else
+                {
+                    Console.Write(3);
+                }
+            }
+            else
+            {
+                Console.BackgroundColor = ConsoleColor.Gray;
+                Console.Write('.');
             }
         }
-
         Console.WriteLine();
     }
 
@@ -64,21 +58,21 @@ while (!game.Winner.HasValue)
     switch (key.Key)
     {
         case ConsoleKey.LeftArrow:
-            selectedX = (selectedX - 1 + game.LengthX) % game.LengthX;
+            selectedX = (selectedX - 1 + 8) % 8;
             break;
         case ConsoleKey.RightArrow:
-            selectedX = (selectedX + 1) % game.LengthX;
+            selectedX = (selectedX + 1) % 8;
             break;
         case ConsoleKey.UpArrow:
-            selectedY = (selectedY - 1 + game.LengthY) % game.LengthY;
+            selectedY = (selectedY - 1 + 8) % 8;
             break;
         case ConsoleKey.DownArrow:
-            selectedY = (selectedY + 1) % game.LengthY;
+            selectedY = (selectedY + 1) % 8;
             break;
         case ConsoleKey.Enter:
             try
             {
-                game.MakeTurn(selectedX, selectedY);
+                game.Move(selectedX, selectedY);
             }
             catch (InvalidTurnException)
             {
@@ -87,3 +81,4 @@ while (!game.Winner.HasValue)
             break;
     }
 }
+
